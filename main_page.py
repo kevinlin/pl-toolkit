@@ -42,7 +42,7 @@ def plot_pie_chart_multi_col(summary_df, charts_per_row=3):
                     user_data,
                     labels=None,  # Omit labels on slices
                     autopct="%1.1f%%",  # Show only percentages
-                    startangle=140
+                    startangle=90
                 )
 
                 # Add a legend on the side for actual slice labels
