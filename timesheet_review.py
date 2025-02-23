@@ -1,5 +1,6 @@
 import pprint
 from datetime import datetime
+from openpyxl import load_workbook
 
 import pandas as pd
 
@@ -80,10 +81,9 @@ def summarise_time_distribution(df, category_row_indices, date_col_mappings):
         for category, row_idx in categories.items():
             # print(f"User: {user}, Category: {category}->")
             # for _, col_idx in date_col_mappings.items():
-            # for col_idx in range(11, 47):
-            #     print(f"[{row_idx}:{col_idx}]: {str(df.iloc[row_idx, col_idx])}")
+            #     print(f"[{row_idx+1}:{col_idx}]: {str(df.iloc[row_idx+1, col_idx])}")
 
-            cell_values = df.iloc[row_idx, [col_idx for _, col_idx in date_col_mappings.items()]]
+            cell_values = df.iloc[row_idx + 1, [col_idx for _, col_idx in date_col_mappings.items()]]
             total_hours = cell_values[cell_values.apply(lambda x: isinstance(x, (int, float)) and pd.notna(x))].sum()
             summary_data[user][category] = total_hours
 
@@ -105,14 +105,14 @@ def main():
     # print(f"Days to check: {date_col_mappings}")
     timesheet_entries = read_timesheet_entries_by_users(df, user_row_mappings, date_col_mappings)
     print(timesheet_entries)
-    # worksheet = load_workbook(file_path, data_only=True)["Sheet2"]  # `data_only=True` retrieves evaluated values
-    # dfs = pd.DataFrame([[cell.value for cell in row] for row in worksheet.iter_rows()])
-    # summary_data = summarise_time_distribution(dfs, category_row_indices, date_col_mappings)
+    # Load workbook with data_only=True to get cell values (not formulas)
+    worksheet = load_workbook(filename=file_path, data_only=True)["Sheet2"]  # Replace with your sheet name
+    dfs = pd.DataFrame(list(worksheet.iter_rows(values_only=True)))
+    summary_data = summarise_time_distribution(dfs, category_row_indices, date_col_mappings)
+    print(summary_data)
 
-    # Save results to a new Excel file
-    output_file = "output/timesheet_analysis_output.xlsx"
-    timesheet_entries.to_excel(output_file, index=True)
-    print(f"Timesheet analysis saved to {output_file}")
+    timesheet_entries.to_csv("output/timesheet_entries.csv", index=True)
+    summary_data.to_csv("output/time_distribution.csv", index=True)
 
 if __name__ == "__main__":
     main()
