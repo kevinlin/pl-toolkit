@@ -1,8 +1,9 @@
+import argparse
 import pprint
 from datetime import datetime
-from openpyxl import load_workbook
 
 import pandas as pd
+from openpyxl import load_workbook
 
 
 def extract_user_row_mappings(df):
@@ -91,8 +92,11 @@ def summarise_time_distribution(df, category_row_indices, date_col_mappings):
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Process Vertec timesheet')
+    parser.add_argument('file_path', type=str, help='Path to the input Excel file')
+    file_path = parser.parse_args().file_path
+
     # Load and process the timesheet
-    file_path = "input/202502_ZE TimeSheet_OpHours.xlsx"  # Change this as needed
     df = pd.read_excel(file_path, sheet_name="Sheet2", skiprows=0)
 
     pp = pprint.PrettyPrinter(indent=4)
