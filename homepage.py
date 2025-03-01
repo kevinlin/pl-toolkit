@@ -14,7 +14,9 @@ def color_negative_red_positive_yellow(val):
     return ''
 
 
-# Main UI Code
+# Streamlit Code
+st.set_page_config(page_title="PL Toolkit", layout="wide", initial_sidebar_state="collapsed")
+
 st.title("Vertec Timesheet Analyzer")
 
 uploaded_file = st.file_uploader("Upload Vertec Timesheet")
