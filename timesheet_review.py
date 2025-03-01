@@ -1,6 +1,6 @@
 import argparse
 import pprint
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 from openpyxl import load_workbook
@@ -43,6 +43,10 @@ def extract_date_col_mappings(df):
     valid_days = {}
 
     today = datetime.now()
+    if today.day <= 5:
+        # Take last day of previous month if today is the first week of the month
+        last_day = today.replace(day=1) - timedelta(days=1)
+        today = last_day
 
     for idx, col in enumerate(columns):  # Track column index
         try:
@@ -117,6 +121,7 @@ def main():
 
     timesheet_entries.to_csv("output/timesheet_entries.csv", index=True)
     summary_data.to_csv("output/time_distribution.csv", index=True)
+
 
 if __name__ == "__main__":
     main()
