@@ -75,6 +75,7 @@ def read_timesheet_entries_by_users(df, user_row_mappings, date_col_mappings):
             actual_hours = df.iloc[row_idx + 3, col_idx]
             actual_hours = int(actual_hours) if pd.notna(actual_hours) else 0
             timesheet_data.at[user, day_str] = target_hours - actual_hours
+        timesheet_data.at[user, "Submitted?"] = df.iloc[row_idx, 2] == 1
 
     return timesheet_data
 
