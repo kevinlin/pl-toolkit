@@ -43,8 +43,10 @@ def extract_date_col_mappings(df):
     valid_days = {}
 
     today = datetime.now()
+    previous_month = False
     if today.day <= 5:
         # Take last day of previous month if today is the first week of the month
+        previous_month = True
         last_day = today.replace(day=1) - timedelta(days=1)
         today = last_day
 
@@ -53,8 +55,9 @@ def extract_date_col_mappings(df):
             day_str, weekday = col.split(", ")  # Extract numeric day and weekday
             day = int(day_str)  # Convert day to integer
             date = today.replace(day=day)
-            if weekday not in ["Sa", "Su"] and day < today.day:  # Only include weekdays up to yesterday
-                valid_days[date.strftime("%a, %b-%d")] = idx + 15
+            if weekday not in ["Sa", "Su"]:  # Only include weekdays up to yesterday
+                if (previous_month and day <= last_day.day) or (not previous_month and day < today.day):
+                    valid_days[date.strftime("%a, %b-%d")] = idx + 15
         except ValueError:
             continue
 
