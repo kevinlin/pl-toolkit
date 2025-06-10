@@ -22,7 +22,7 @@ def csv_to_articles(input_file, output_directory):
                     else:
                         # Append newline after each period
                         formatted_value = value.replace(". ", ".\n")
-                        out_f.write(f"{header}:\n{value}\n\n")
+                        out_f.write(f"{header}:\n{formatted_value}\n\n")
 
 
 if __name__ == "__main__":
