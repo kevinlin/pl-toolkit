@@ -20,7 +20,8 @@ def csv_to_articles(input_file, output_directory):
                     if len(value) <= 80:
                         out_f.write(f"{header}: {value}\n")
                     else:
-                        # Append newline after each period
+                        # Append newline after each period and write the
+                        # formatted text to the file
                         formatted_value = value.replace(". ", ".\n")
                         out_f.write(f"{header}:\n{formatted_value}\n\n")
 
