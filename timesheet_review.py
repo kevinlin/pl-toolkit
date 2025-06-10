@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 def extract_user_row_mappings(df):
     """Extract team members and their corresponding row indices from the timesheet."""
     user_row_index = df[df.iloc[:, 0] == 'User'].index
-    summary_categories = ["Absenses [h]", "Networking and administration, personal development", "Operational hours"]
+    summary_categories = ["Absences [h]", "Networking and administration, personal development", "Operational hours"]
 
     if not user_row_index.empty:
         # Extract names from the next rows until an empty row is encountered
@@ -83,7 +83,7 @@ def read_timesheet_entries_by_users(df, user_row_mappings, date_col_mappings):
 def summarise_time_distribution(df, category_row_indices, date_col_mappings):
     """Summarise the hours each user spent separately on predefined categories."""
     summary_data = {
-        user: {"Absenses [h]": 0, "Networking and administration, personal development": 0, "Operational hours": 0} for
+        user: {"Absences [h]": 0, "Networking and administration, personal development": 0, "Operational hours": 0} for
         user in category_row_indices}
 
     for user, categories in category_row_indices.items():
