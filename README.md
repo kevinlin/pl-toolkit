@@ -30,4 +30,3 @@ python `timesheet_review.py` `input/202502_ZE\ TimeSheet_OpHours.xlsx`
 - **Output folder**: After running the script, CSV files (`timesheet_entries.csv`, `time_distribution.csv`) are generated here for further analysis or uploading into the Streamlit application.
 
 ---
-```
