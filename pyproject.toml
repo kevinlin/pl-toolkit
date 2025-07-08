@@ -91,9 +91,7 @@ dev = [
     "pytest-cov>=4.1.0",
     "pre-commit>=3.4.0",
 ]
-trends = [
-    "pytrends>=4.9.0",
-]
+
 
 [project.urls]
 Homepage = "https://github.com/username/pl-toolkit"
@@ -112,7 +110,6 @@ py-modules = [
     "pdf_parser",
     "csv_converter",
     "homepage",
-    "trend",
 ]
 
 [tool.setuptools.packages.find]
@@ -169,7 +166,7 @@ module = [
     "pandas.*",
     "openpyxl.*",
     "PyPDF2.*",
-    "pytrends.*",
+
 ]
 ignore_missing_imports = true
 

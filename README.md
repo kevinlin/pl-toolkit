@@ -25,10 +25,7 @@ pip install -e .[dev]
 pip install -e .
 ```
 
-#### Option 3: With Google Trends Support
-```bash
-pip install -e .[trends]
-```
+
 
 ### Running the Streamlit Application
 
@@ -86,7 +83,6 @@ pl-toolkit/
 ├── timesheet_review.py      # Core timesheet processing logic
 ├── pdf_parser.py           # PDF document parsing utilities
 ├── csv_converter.py        # CSV data conversion tools
-├── trend.py               # Google Trends analysis (optional)
 ├── pages/                 # Streamlit pages
 │   └── 01_time_distribution.py  # Time distribution visualizations
 ├── input/                 # Input data directory (Excel files, PDFs)
