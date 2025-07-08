@@ -49,3 +49,6 @@ htmlcov/
 # Input/Output files
 input/
 output/
+
+# Cursor IDE
+.history/

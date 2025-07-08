@@ -1,0 +1,231 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pl-toolkit"
+version = "0.1.0"
+description = "A collection of tools for People Leads to perform their duties, including Streamlit dashboards and timesheet processing"
+authors = [
+    {name = "Kevin Lin", email = "kevin@example.com"}
+]
+maintainers = [
+    {name = "Kevin Lin", email = "kevin@example.com"}
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.11"
+keywords = ["timesheet", "streamlit", "people-management", "data-analysis"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+
+dependencies = [
+    "altair==5.5.0",
+    "attrs==25.1.0",
+    "blinker==1.9.0",
+    "cachetools==5.5.2",
+    "certifi==2025.1.31",
+    "charset-normalizer==3.4.1",
+    "click==8.1.8",
+    "contourpy==1.3.1",
+    "cycler==0.12.1",
+    "et_xmlfile==2.0.0",
+    "fonttools==4.56.0",
+    "gitdb==4.0.12",
+    "GitPython==3.1.44",
+    "idna==3.10",
+    "Jinja2==3.1.5",
+    "jsonschema==4.23.0",
+    "jsonschema-specifications==2024.10.1",
+    "kiwisolver==1.4.8",
+    "markdown-it-py==3.0.0",
+    "MarkupSafe==3.0.2",
+    "matplotlib==3.10.0",
+    "mdurl==0.1.2",
+    "narwhals==1.27.1",
+    "numpy==2.2.3",
+    "openpyxl==3.1.5",
+    "packaging==24.2",
+    "pandas==2.2.3",
+    "pillow==11.1.0",
+    "protobuf==5.29.3",
+    "pyarrow==19.0.1",
+    "pydeck==0.9.1",
+    "Pygments==2.19.1",
+    "pyparsing==3.2.1",
+    "PyPDF2==3.0.1",
+    "python-dateutil==2.9.0.post0",
+    "pytz==2025.1",
+    "referencing==0.36.2",
+    "requests==2.32.3",
+    "rich==13.9.4",
+    "rpds-py==0.23.1",
+    "six==1.17.0",
+    "smmap==5.0.2",
+    "streamlit==1.42.2",
+    "tenacity==9.0.0",
+    "toml==0.10.2",
+    "tornado==6.4.2",
+    "typing_extensions==4.12.2",
+    "tzdata==2025.1",
+    "urllib3==2.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pre-commit>=3.4.0",
+]
+trends = [
+    "pytrends>=4.9.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/username/pl-toolkit"
+Repository = "https://github.com/username/pl-toolkit.git"
+Documentation = "https://github.com/username/pl-toolkit#readme"
+"Bug Tracker" = "https://github.com/username/pl-toolkit/issues"
+
+[project.scripts]
+timesheet-review = "timesheet_review:main"
+pdf-parser = "pdf_parser:main"
+csv-converter = "csv_converter:main"
+
+[tool.setuptools]
+py-modules = [
+    "timesheet_review",
+    "pdf_parser",
+    "csv_converter",
+    "homepage",
+    "trend",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pages*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | input
+  | output
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["timesheet_review", "pdf_parser", "csv_converter"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "streamlit.*",
+    "matplotlib.*",
+    "pandas.*",
+    "openpyxl.*",
+    "PyPDF2.*",
+    "pytrends.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=.",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+    ".venv/*",
+    "venv/*",
+    "*/site-packages/*",
+    "input/*",
+    "output/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\bProtocol\):",
+    "@(abc\.)?abstractmethod",
+]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "E501", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "input",
+    "output",
+] 
