@@ -178,10 +178,13 @@ if uploaded_file is not None:
                         activity_totals[col.replace('Counts', '').replace('view', '').replace('create', '')] = total
             
             if activity_totals:
+                # Sort activities by total count in descending order
+                sorted_activities = sorted(activity_totals.items(), key=lambda x: x[1], reverse=True)
+                
                 # Create activity breakdown chart
                 fig_activity, ax = plt.subplots(figsize=(12, 6))
-                activities = list(activity_totals.keys())
-                values = list(activity_totals.values())
+                activities = [item[0] for item in sorted_activities]
+                values = [item[1] for item in sorted_activities]
                 
                 bars = ax.bar(activities, values, color=plt.cm.tab20(np.linspace(0, 1, len(activities))))
                 ax.set_title('Total Activity Breakdown (All Weeks)')
@@ -206,7 +209,7 @@ if uploaded_file is not None:
             'weeks_active': 'mean'
         }).round(2)
 
-        country_summary.columns = ['Total Users', 'Total Logins', 'Avg Logins per User', 'Max Weekly Logins', 'Avg Weekly Active']
+        country_summary.columns = ['Total Number of Users', 'Total Logins', 'Avg Logins per User', 'Max Weekly Logins', 'Avg Weekly Active']
         st.dataframe(country_summary, use_container_width=True)
 
         # Weekly summary table
