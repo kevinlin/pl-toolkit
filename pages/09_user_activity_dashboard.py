@@ -206,7 +206,7 @@ if uploaded_file is not None:
             'weeks_active': 'mean'
         }).round(2)
 
-        country_summary.columns = ['Total Users', 'Total Logins', 'Avg Logins per User', 'Max User Logins', 'Avg Weeks Active']
+        country_summary.columns = ['Total Users', 'Total Logins', 'Avg Logins per User', 'Max Weekly Logins', 'Avg Weekly Active']
         st.dataframe(country_summary, use_container_width=True)
 
         # Weekly summary table
