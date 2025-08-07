@@ -102,6 +102,61 @@ if uploaded_file is not None:
         plt.tight_layout()
         st.pyplot(fig_weekly)
 
+        # Monthly Active Users section
+        st.subheader("📊 Monthly Active Users")
+        
+        # Total user counts per country (hardcoded as specified)
+        total_users_by_country = {
+            'Singapore': 32,
+            'Malaysia': 35
+        }
+        
+        # Calculate MAU (users with total_logins > 0) per country
+        mau_by_country = active_users['country'].value_counts().to_dict()
+        
+        # Create pie charts for each country
+        countries_in_data = [country for country in total_users_by_country.keys() if country in mau_by_country]
+        
+        if countries_in_data:
+            # Create a single figure with subplots for consistent sizing
+            fig_mau, axes = plt.subplots(1, len(countries_in_data), figsize=(10, 5))
+            if len(countries_in_data) == 1:
+                axes = [axes]  # Make it iterable for single country
+            
+            for i, country in enumerate(countries_in_data):
+                total_users = total_users_by_country[country]
+                active_users_count = mau_by_country.get(country, 0)
+                inactive_users_count = total_users - active_users_count
+                
+                # Create pie chart data
+                sizes = [active_users_count, inactive_users_count]
+                labels = ['Active Users', 'Inactive Users']
+                colors = ['#2E8B57', '#DC143C']  # Green for active, red for inactive
+                
+                # Create pie chart
+                wedges, texts, autotexts = axes[i].pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', 
+                                                     startangle=90, textprops={'fontsize': 10})
+                axes[i].set_title(f'{country}\nMAU: {active_users_count}/{total_users}', fontsize=12, fontweight='bold')
+                axes[i].axis('equal')  # Ensure circular pie chart
+                
+                # Make percentage text bold
+                for autotext in autotexts:
+                    autotext.set_fontweight('bold')
+                    autotext.set_color('white')
+            
+            plt.tight_layout()
+            st.pyplot(fig_mau)
+            
+            # Display MAU rate metrics below the charts
+            cols = st.columns(len(countries_in_data))
+            for i, country in enumerate(countries_in_data):
+                total_users = total_users_by_country[country]
+                active_users_count = mau_by_country.get(country, 0)
+                with cols[i]:
+                    st.metric(f"{country} MAU Rate", f"{(active_users_count/total_users*100):.1f}%")
+        else:
+            st.info("No data available for the specified countries (Singapore, Malaysia)")
+
         # User input for top N users per country
         st.subheader("🎯 Filter Options")
         top_n = st.slider("Select top N users per country", min_value=3, max_value=10, value=5)
