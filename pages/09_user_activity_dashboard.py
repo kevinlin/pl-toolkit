@@ -108,7 +108,8 @@ if uploaded_file is not None:
         # Total user counts per country (hardcoded as specified)
         total_users_by_country = {
             'Singapore': 32,
-            'Malaysia': 35
+            'Malaysia': 35,
+            'Vietnam': 27
         }
         
         # Calculate MAU (users with total_logins > 0) per country
@@ -119,7 +120,7 @@ if uploaded_file is not None:
         
         if countries_in_data:
             # Create a single figure with subplots for consistent sizing
-            fig_mau, axes = plt.subplots(1, len(countries_in_data), figsize=(10, 5))
+            fig_mau, axes = plt.subplots(1, len(countries_in_data), figsize=(15, 5))
             if len(countries_in_data) == 1:
                 axes = [axes]  # Make it iterable for single country
             
@@ -174,50 +175,48 @@ if uploaded_file is not None:
                 display_df.columns = ['Full Name', 'Division', 'Total Logins', 'Weeks Active']
                 st.dataframe(display_df, use_container_width=True, hide_index=True)
 
-        # Streamlit bar chart for top users
-        st.subheader("📊 Top Users by Total Login Count")
-        chart_data = top_users_by_country.set_index('fullName')['total_logins']
-        st.bar_chart(chart_data)
+        # Matplotlib bar chart for top users by logins
+        st.subheader("📊 Top Users by Logins")
+        fig_top_users, ax = plt.subplots(figsize=(12, 6))
 
-        # Detailed visualization
-        st.subheader("📊 Detailed Analysis")
-
-        # Create matplotlib figure for country and user analysis
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
-
-        # Chart 1: Total logins by country
-        country_totals = active_users.groupby('country')['total_logins'].sum().sort_values(ascending=True)
-        colors = plt.cm.Set3(np.linspace(0, 1, len(country_totals)))
-
-        bars1 = ax1.barh(country_totals.index, country_totals.values, color=colors)
-        ax1.set_xlabel('Total Login Count (All Weeks)')
-        ax1.set_title('Total Logins by Country')
-        ax1.grid(axis='x', alpha=0.3)
-
-        # Add value labels on bars
-        for i, (country, value) in enumerate(country_totals.items()):
-            ax1.text(value + 0.5, i, str(value), va='center', fontweight='bold')
-
-        # Chart 2: Top users overall
-        top_users_overall = active_users.head(top_n * 2)
+        top_users_overall = active_users.sort_values('total_logins', ascending=False).head(top_n * 3)
         user_labels = [f"{name}\n({country})" for name, country in 
                        zip(top_users_overall['fullName'], top_users_overall['country'])]
 
-        bars2 = ax2.bar(range(len(top_users_overall)), top_users_overall['total_logins'], 
+        bars2 = ax.bar(range(len(top_users_overall)), top_users_overall['total_logins'], 
                         color=plt.cm.viridis(np.linspace(0, 1, len(top_users_overall))))
-        ax2.set_xlabel('Users')
-        ax2.set_ylabel('Total Login Count')
-        ax2.set_title(f'Top {len(top_users_overall)} Users Overall')
-        ax2.set_xticks(range(len(top_users_overall)))
-        ax2.set_xticklabels(user_labels, rotation=45, ha='right', fontsize=8)
-        ax2.grid(axis='y', alpha=0.3)
+        ax.set_xlabel('Users')
+        ax.set_ylabel('Total Login Count')
+        ax.set_title(f'Top {len(top_users_overall)} Users Overall')
+        ax.set_xticks(range(len(top_users_overall)))
+        ax.set_xticklabels(user_labels, rotation=45, ha='right', fontsize=8)
+        ax.grid(axis='y', alpha=0.3)
 
         # Add value labels on bars
         for i, value in enumerate(top_users_overall['total_logins']):
-            ax2.text(i, value + 0.1, str(value), ha='center', va='bottom', fontweight='bold')
+            ax.text(i, value + 0.1, str(value), ha='center', va='bottom', fontweight='bold')
 
         plt.tight_layout()
-        st.pyplot(fig)
+        st.pyplot(fig_top_users)
+
+        # Create matplotlib bar chart for top countries by logins
+        st.subheader("🌍 Top Countries by Total Logins")
+        fig_top_countries, ax = plt.subplots(figsize=(15, 6))
+
+        country_totals = active_users.groupby('country')['total_logins'].sum().sort_values(ascending=True)
+        colors = plt.cm.Set3(np.linspace(0, 1, len(country_totals)))
+
+        bars1 = ax.barh(country_totals.index, country_totals.values, color=colors)
+        ax.set_xlabel('Total Login Count (All Weeks)')
+        ax.set_title('Total Logins by Country')
+        ax.grid(axis='x', alpha=0.3)
+
+        # Add value labels on bars
+        for i, (country, value) in enumerate(country_totals.items()):
+            ax.text(value + 0.5, i, str(value), va='center', fontweight='bold')
+
+        plt.tight_layout()
+        st.pyplot(fig_top_countries)
 
         # Activity breakdown analysis (if additional columns are available)
         view_columns = [col for col in df.columns if 'view' in col.lower() or 'create' in col.lower()]
