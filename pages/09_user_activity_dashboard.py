@@ -126,10 +126,6 @@ if uploaded_file is not None:
         with col3:
             st.metric("Countries", df['country'].nunique())
 
-        # =============================================================================
-        # WEEKLY TRENDS SECTION
-        # =============================================================================
-        st.markdown("---")
         st.subheader("📈 Weekly Activity Trends")
         weekly_agg_dict = {
             'logins': 'sum',
