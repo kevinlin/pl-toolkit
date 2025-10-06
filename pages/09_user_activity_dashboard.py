@@ -407,43 +407,146 @@ if uploaded_file is not None:
                 st.info("No users have created events in this period.")
 
         # Activity breakdown analysis (if additional columns are available)
+        st.markdown("---")
+        st.header("🔍 Activity Breakdown Analysis")
+        
+        # Calculate total activity across all view types
         view_columns = [col for col in df.columns if 'view' in col.lower() or 'create' in col.lower()]
-        if view_columns:
-            st.markdown("---")
-            st.header("🔍 Activity Breakdown Analysis")
+        activity_totals = {}
+        for col in view_columns:
+            if df[col].dtype in ['int64', 'float64']:
+                total = df[col].sum()
+                if total > 0:
+                    activity_totals[col.replace('Counts', '').replace('view', '').replace('create', '')] = total
+        
+        if activity_totals:
+            # Sort activities by total count in descending order
+            sorted_activities = sorted(activity_totals.items(), key=lambda x: x[1], reverse=True)
             
-            # Calculate total activity across all view types
-            activity_totals = {}
+            # Create activity breakdown chart
+            fig_activity, ax = plt.subplots(figsize=(12, 6))
+            activities = [item[0] for item in sorted_activities]
+            values = [item[1] for item in sorted_activities]
+            
+            bars = ax.bar(activities, values, color=plt.cm.tab20(np.linspace(0, 1, len(activities))))
+            ax.set_title('Total Activity Breakdown (All Weeks)')
+            ax.set_ylabel('Total Count')
+            ax.set_xlabel('Activity Type')
+            plt.xticks(rotation=45, ha='right')
+            ax.grid(axis='y', alpha=0.3)
+            
+            # Add value labels
+            for bar, value in zip(bars, values):
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+                        f'{int(value)}', ha='center', va='bottom')
+            
+            plt.tight_layout()
+            st.pyplot(fig_activity)
+            
+            # Create stacked bar chart by country for top activities
+            st.subheader("📊 Activity Breakdown by Country")
+            
+            # Get top N activities (e.g., top 10 to avoid overcrowding)
+            top_n_activities = min(10, len(sorted_activities))
+            top_activities = [item[0] for item in sorted_activities[:top_n_activities]]
+            
+            # Map clean names back to original column names
+            original_col_mapping = {}
             for col in view_columns:
-                if df[col].dtype in ['int64', 'float64']:
-                    total = df[col].sum()
-                    if total > 0:
-                        activity_totals[col.replace('Counts', '').replace('view', '').replace('create', '')] = total
+                clean_name = col.replace('Counts', '').replace('view', '').replace('create', '')
+                if clean_name in top_activities:
+                    original_col_mapping[clean_name] = col
             
-            if activity_totals:
-                # Sort activities by total count in descending order
-                sorted_activities = sorted(activity_totals.items(), key=lambda x: x[1], reverse=True)
+            # Aggregate by country for each activity
+            country_activity_data = {}
+            countries = df['country'].unique()
+            
+            for activity in top_activities:
+                if activity in original_col_mapping:
+                    col_name = original_col_mapping[activity]
+                    country_totals = df.groupby('country')[col_name].sum()
+                    country_activity_data[activity] = country_totals
+            
+            # Create DataFrame for plotting
+            activity_by_country_df = pd.DataFrame(country_activity_data)
+            
+            # Create stacked horizontal bar chart
+            fig_country_activity, ax = plt.subplots(figsize=(14, max(8, len(countries) * 0.5)))
+            
+            # Plot stacked bars
+            activity_by_country_df.plot(
+                kind='barh',
+                stacked=True,
+                ax=ax,
+                colormap='tab20',
+                width=0.7
+            )
+            
+            ax.set_xlabel('Total Activity Count')
+            ax.set_ylabel('Country')
+            ax.set_title(f'Top {top_n_activities} Activities by Country (Stacked)')
+            ax.legend(title='Activity Type', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+            ax.grid(axis='x', alpha=0.3)
+            
+            plt.tight_layout()
+            st.pyplot(fig_country_activity)
+            
+            # Also create a grouped bar chart for comparison
+            st.subheader("📊 Activity Comparison by Country (Grouped)")
+            
+            # Select top 5 activities for better readability in grouped chart
+            top_5_activities = [item[0] for item in sorted_activities[:5]]
+            top_5_data = {}
+            
+            for activity in top_5_activities:
+                if activity in original_col_mapping:
+                    col_name = original_col_mapping[activity]
+                    country_totals = df.groupby('country')[col_name].sum()
+                    top_5_data[activity] = country_totals
+            
+            top_5_df = pd.DataFrame(top_5_data)
+            
+            # Create grouped bar chart
+            fig_grouped, ax = plt.subplots(figsize=(14, max(6, len(countries) * 0.4)))
+            
+            top_5_df.plot(
+                kind='barh',
+                ax=ax,
+                colormap='Set2',
+                width=0.7
+            )
+            
+            ax.set_xlabel('Total Activity Count')
+            ax.set_ylabel('Country')
+            ax.set_title('Top 5 Activities by Country (Grouped Comparison)')
+            ax.legend(title='Activity Type', bbox_to_anchor=(1.05, 1), loc='upper left')
+            ax.grid(axis='x', alpha=0.3)
+            
+            plt.tight_layout()
+            st.pyplot(fig_grouped)
+            
+            # Create a summary table
+            st.subheader("📋 Activity Summary by Country")
+            
+            # Calculate total activities per country across all activity types
+            summary_data = []
+            for country in countries:
+                country_df = df[df['country'] == country]
+                country_row = {'Country': country}
                 
-                # Create activity breakdown chart
-                fig_activity, ax = plt.subplots(figsize=(12, 6))
-                activities = [item[0] for item in sorted_activities]
-                values = [item[1] for item in sorted_activities]
+                for activity in top_activities:
+                    if activity in original_col_mapping:
+                        col_name = original_col_mapping[activity]
+                        country_row[activity] = int(country_df[col_name].sum())
                 
-                bars = ax.bar(activities, values, color=plt.cm.tab20(np.linspace(0, 1, len(activities))))
-                ax.set_title('Total Activity Breakdown (All Weeks)')
-                ax.set_ylabel('Total Count')
-                ax.set_xlabel('Activity Type')
-                plt.xticks(rotation=45, ha='right')
-                ax.grid(axis='y', alpha=0.3)
-                
-                # Add value labels
-                for bar, value in zip(bars, values):
-                    height = bar.get_height()
-                    ax.text(bar.get_x() + bar.get_width()/2., height + 0.1,
-                           f'{int(value)}', ha='center', va='bottom')
-                
-                plt.tight_layout()
-                st.pyplot(fig_activity)
+                country_row['Total Activities'] = sum([v for k, v in country_row.items() if k != 'Country'])
+                summary_data.append(country_row)
+            
+            summary_df = pd.DataFrame(summary_data)
+            summary_df = summary_df.sort_values('Total Activities', ascending=False)
+            
+            st.dataframe(summary_df, use_container_width=True, hide_index=True)
 
     except Exception as e:
         st.error(f"Error reading the CSV file: {str(e)}")
