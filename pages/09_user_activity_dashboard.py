@@ -47,15 +47,31 @@ if uploaded_file is not None:
         st.dataframe(df[preview_cols].head(10), use_container_width=True)
         
         # Aggregate user data across all weeks
-        user_totals = df.groupby(['fullName', 'country', 'division']).agg({
+        agg_dict = {
             'logins': 'sum',
             'week_period': 'count'
-        }).reset_index()
-        user_totals.columns = ['fullName', 'country', 'division', 'total_logins', 'weeks_active']
+        }
+        
+        # Add createEvents if it exists in the dataframe
+        if 'createEvents' in df.columns:
+            agg_dict['createEvents'] = 'sum'
+        
+        user_totals = df.groupby(['fullName', 'country', 'division']).agg(agg_dict).reset_index()
+        
+        # Rename columns based on what's available
+        new_columns = ['fullName', 'country', 'division', 'total_logins', 'weeks_active']
+        if 'createEvents' in df.columns:
+            new_columns.append('total_createEvents')
+        user_totals.columns = new_columns
         
         # Filter out users with zero logins
         active_users = user_totals[user_totals['total_logins'] > 0].copy()
         active_users = active_users.sort_values(['country', 'total_logins'], ascending=[True, False])
+        
+        # Filter users with createEvents if column exists
+        if 'createEvents' in df.columns:
+            active_users_events = user_totals[user_totals['total_createEvents'] > 0].copy()
+            active_users_events = active_users_events.sort_values(['country', 'total_createEvents'], ascending=[True, False])
 
         # Display basic statistics
         st.subheader("📊 Overview")
@@ -158,6 +174,8 @@ if uploaded_file is not None:
         else:
             st.info("No data available for the specified countries (Singapore, Malaysia)")
 
+        st.markdown("---")
+        st.header("🔑 Login Analysis")
         # User input for top N users per country
         st.subheader("🎯 Filter Options")
         top_n = st.slider("Select top N users per country", min_value=3, max_value=10, value=5)
@@ -218,10 +236,118 @@ if uploaded_file is not None:
         plt.tight_layout()
         st.pyplot(fig_top_countries)
 
+        # Create Events Section - Similar to Logins
+        if 'createEvents' in df.columns and 'total_createEvents' in user_totals.columns:
+            st.markdown("---")
+            st.header("📝 Create Events Analysis")
+            
+            # Display basic statistics for createEvents
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Events Created", int(df['createEvents'].sum()))
+            with col2:
+                st.metric("Users with Events", len(active_users_events))
+            with col3:
+                avg_events = active_users_events['total_createEvents'].mean() if len(active_users_events) > 0 else 0
+                st.metric("Avg Events per Active User", f"{avg_events:.1f}")
+            
+            if len(active_users_events) > 0:
+                # Country-wise breakdown for createEvents
+                st.subheader("🌍 Country Breakdown - Top Users (Total Create Events)")
+                for country in df['country'].unique():
+                    country_data = active_users_events[active_users_events['country'] == country].head(top_n)
+                    if not country_data.empty:
+                        st.write(f"**{country}** - Top {min(top_n, len(country_data))} Users:")
+                        display_df = country_data[['fullName', 'division', 'total_createEvents', 'weeks_active']].copy()
+                        display_df.columns = ['Full Name', 'Division', 'Total Create Events', 'Weeks Active']
+                        st.dataframe(display_df, use_container_width=True, hide_index=True)
+                
+                # Matplotlib bar chart for top users by createEvents
+                st.subheader("📊 Top Users by Create Events")
+                fig_top_users_events, ax = plt.subplots(figsize=(12, 6))
+                
+                top_users_events_overall = active_users_events.sort_values('total_createEvents', ascending=False).head(top_n * 3)
+                user_labels_events = [f"{name}\n({country})" for name, country in 
+                                      zip(top_users_events_overall['fullName'], top_users_events_overall['country'])]
+                
+                bars_events = ax.bar(range(len(top_users_events_overall)), top_users_events_overall['total_createEvents'], 
+                                     color=plt.cm.plasma(np.linspace(0, 1, len(top_users_events_overall))))
+                ax.set_xlabel('Users')
+                ax.set_ylabel('Total Create Events Count')
+                ax.set_title(f'Top {len(top_users_events_overall)} Users Overall by Create Events')
+                ax.set_xticks(range(len(top_users_events_overall)))
+                ax.set_xticklabels(user_labels_events, rotation=45, ha='right', fontsize=8)
+                ax.grid(axis='y', alpha=0.3)
+                
+                # Add value labels on bars
+                for i, value in enumerate(top_users_events_overall['total_createEvents']):
+                    ax.text(i, value + 0.1, str(int(value)), ha='center', va='bottom', fontweight='bold')
+                
+                plt.tight_layout()
+                st.pyplot(fig_top_users_events)
+                
+                # Create matplotlib bar chart for top countries by createEvents
+                st.subheader("🌍 Top Countries by Total Create Events")
+                fig_top_countries_events, ax = plt.subplots(figsize=(15, 6))
+                
+                country_totals_events = active_users_events.groupby('country')['total_createEvents'].sum().sort_values(ascending=True)
+                colors_events = plt.cm.Set2(np.linspace(0, 1, len(country_totals_events)))
+                
+                bars_events_country = ax.barh(country_totals_events.index, country_totals_events.values, color=colors_events)
+                ax.set_xlabel('Total Create Events Count (All Weeks)')
+                ax.set_title('Total Create Events by Country')
+                ax.grid(axis='x', alpha=0.3)
+                
+                # Add value labels on bars
+                for i, (country, value) in enumerate(country_totals_events.items()):
+                    ax.text(value + 0.5, i, str(int(value)), va='center', fontweight='bold')
+                
+                plt.tight_layout()
+                st.pyplot(fig_top_countries_events)
+                
+                # Weekly createEvents trends
+                st.subheader("📈 Weekly Create Events Trends")
+                weekly_events_summary = df.groupby(['fromDate', 'week_period']).agg({
+                    'createEvents': 'sum',
+                    'fullName': 'nunique'
+                }).reset_index()
+                weekly_events_summary.columns = ['fromDate', 'week_period', 'total_createEvents', 'active_users']
+                
+                # Filter weeks with at least some events
+                weekly_events_summary = weekly_events_summary[weekly_events_summary['total_createEvents'] > 0]
+                
+                if len(weekly_events_summary) > 0:
+                    fig_weekly_events, ax = plt.subplots(figsize=(12, 5))
+                    
+                    # Total createEvents per week
+                    ax.plot(weekly_events_summary['fromDate'], weekly_events_summary['total_createEvents'], 
+                            marker='o', linewidth=2, color='darkorange')
+                    ax.set_title('Total Create Events per Week')
+                    ax.set_ylabel('Total Create Events')
+                    ax.set_xlabel('Week')
+                    ax.grid(True, alpha=0.3)
+                    ax.tick_params(axis='x', rotation=45)
+                    
+                    plt.tight_layout()
+                    st.pyplot(fig_weekly_events)
+                
+                # Add key insights for createEvents
+                st.subheader("💡 Key Insights - Create Events")
+                most_active_country_events = active_users_events.groupby('country')['total_createEvents'].sum().idxmax()
+                most_active_user_events = active_users_events.loc[active_users_events['total_createEvents'].idxmax()]
+                
+                st.write(f"• **Most Active Country (Events)**: {most_active_country_events} with {int(active_users_events[active_users_events['country'] == most_active_country_events]['total_createEvents'].sum())} total events created")
+                st.write(f"• **Most Active User (Events)**: {most_active_user_events['fullName']} from {most_active_user_events['country']} with {int(most_active_user_events['total_createEvents'])} total events")
+                st.write(f"• **Average Events per Active User**: {active_users_events['total_createEvents'].mean():.1f}")
+                st.write(f"• **Users Creating Events**: {len(active_users_events)} out of {len(user_totals)} users ({len(active_users_events)/len(user_totals)*100:.1f}%)")
+            else:
+                st.info("No users have created events in this period.")
+
         # Activity breakdown analysis (if additional columns are available)
         view_columns = [col for col in df.columns if 'view' in col.lower() or 'create' in col.lower()]
         if view_columns:
-            st.subheader("🔍 Activity Breakdown Analysis")
+            st.markdown("---")
+            st.header("🔍 Activity Breakdown Analysis")
             
             # Calculate total activity across all view types
             activity_totals = {}
