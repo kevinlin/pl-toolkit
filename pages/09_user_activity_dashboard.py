@@ -75,17 +75,17 @@ if uploaded_file is not None:
 
         # Display basic statistics
         st.subheader("📊 Overview")
-        col1, col2, col3 = st.columns(3)
 
+        date_range = f"{df['fromDate'].min().strftime('%Y-%m-%d')} to {df['toDate'].max().strftime('%Y-%m-%d')}"
+        st.metric("Date Range", date_range)
+
+        col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Total Users", len(user_totals))
         with col2:
             st.metric("Active Users", len(active_users))
         with col3:
             st.metric("Countries", df['country'].nunique())
-
-        date_range = f"{df['fromDate'].min().strftime('%Y-%m-%d')} to {df['toDate'].max().strftime('%Y-%m-%d')}"
-        st.metric("Date Range", date_range)
 
         # Weekly Activity Trends
         st.subheader("📈 Weekly Activity Trends")
@@ -126,6 +126,25 @@ if uploaded_file is not None:
         
         plt.tight_layout()
         st.pyplot(fig_weekly)
+
+        # Weekly summary table
+        st.subheader("📅 Weekly Summary")
+        display_columns = ['week_period', 'total_logins', 'active_users']
+        if 'total_createEvents' in weekly_summary.columns:
+            display_columns.append('total_createEvents')
+        
+        weekly_display = weekly_summary[display_columns].copy()
+        # Rename columns for better display
+        column_rename = {
+            'week_period': 'Week Period',
+            'total_logins': 'Total Logins',
+            'active_users': 'Active Users'
+        }
+        if 'total_createEvents' in weekly_summary.columns:
+            column_rename['total_createEvents'] = 'Total Events Created'
+        
+        weekly_display.columns = [column_rename.get(col, col) for col in weekly_display.columns]
+        st.dataframe(weekly_display, use_container_width=True, hide_index=True)
 
         # Monthly Active Users section
         st.subheader("📊 Monthly Active Users")
@@ -182,6 +201,29 @@ if uploaded_file is not None:
                     st.metric(f"{country} MAU Rate", f"{(active_users_count/total_users*100):.1f}%")
         else:
             st.info("No data available for the specified countries (Singapore, Malaysia)")
+
+        # Summary table by country
+        st.subheader("📋 Summary by Country")
+        
+        # Build aggregation dictionary
+        country_agg_dict = {
+            'total_logins': ['count', 'sum', 'mean', 'max'],
+            'weeks_active': 'mean'
+        }
+        
+        # Add createEvents metrics if available
+        if 'total_createEvents' in user_totals.columns:
+            country_agg_dict['total_createEvents'] = ['sum', 'mean', 'max']
+        
+        country_summary = user_totals.groupby('country').agg(country_agg_dict).round(2)
+        
+        # Build column names
+        column_names = ['Total Number of Users', 'Total Logins', 'Avg Logins per User', 'Max Weekly Logins', 'Avg Weekly Active']
+        if 'total_createEvents' in user_totals.columns:
+            column_names.extend(['Total Events Created', 'Avg Events per User', 'Max Weekly Events'])
+        
+        country_summary.columns = column_names
+        st.dataframe(country_summary, use_container_width=True)
 
         st.markdown("---")
         st.header("🔑 Login Analysis")
@@ -402,35 +444,6 @@ if uploaded_file is not None:
                 
                 plt.tight_layout()
                 st.pyplot(fig_activity)
-
-        # Summary table by country
-        st.subheader("📋 Summary by Country")
-        country_summary = user_totals.groupby('country').agg({
-            'total_logins': ['count', 'sum', 'mean', 'max'],
-            'weeks_active': 'mean'
-        }).round(2)
-
-        country_summary.columns = ['Total Number of Users', 'Total Logins', 'Avg Logins per User', 'Max Weekly Logins', 'Avg Weekly Active']
-        st.dataframe(country_summary, use_container_width=True)
-
-        # Weekly summary table
-        st.subheader("📅 Weekly Summary")
-        display_columns = ['week_period', 'total_logins', 'active_users']
-        if 'total_createEvents' in weekly_summary.columns:
-            display_columns.append('total_createEvents')
-        
-        weekly_display = weekly_summary[display_columns].copy()
-        # Rename columns for better display
-        column_rename = {
-            'week_period': 'Week Period',
-            'total_logins': 'Total Logins',
-            'active_users': 'Active Users'
-        }
-        if 'total_createEvents' in weekly_summary.columns:
-            column_rename['total_createEvents'] = 'Total Events Created'
-        
-        weekly_display.columns = [column_rename.get(col, col) for col in weekly_display.columns]
-        st.dataframe(weekly_display, use_container_width=True, hide_index=True)
 
     except Exception as e:
         st.error(f"Error reading the CSV file: {str(e)}")
