@@ -25,6 +25,7 @@ COLORS_QUALITATIVE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
                       '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
 COLORS_SEQUENTIAL_BLUE = plt.cm.Blues
 COLORS_SEQUENTIAL_ORANGE = plt.cm.Oranges
+COLORS_SEQUENTIAL_GREEN = plt.cm.Greens
 COLORS_DIVERGING = plt.cm.RdYlGn
 
 # =============================================================================
@@ -384,9 +385,9 @@ if uploaded_file is not None:
                 user_labels_events = [f"{name}\n({country})" for name, country in 
                                       zip(top_users_events_overall['fullName'], top_users_events_overall['country'])]
                 
-                # Use consistent color scheme (orange for events)
+                # Use consistent color scheme (green for events)
                 bars_events = ax.bar(range(len(top_users_events_overall)), top_users_events_overall['total_createEvents'], 
-                                     color=COLORS_SEQUENTIAL_ORANGE(np.linspace(0.4, 0.9, len(top_users_events_overall))),
+                                     color=COLORS_SEQUENTIAL_GREEN(np.linspace(0.4, 0.9, len(top_users_events_overall))),
                                      edgecolor='white', linewidth=0.5)
                 ax.set_xlabel('Users', fontsize=10)
                 ax.set_ylabel('Total Create Events Count', fontsize=10)
@@ -440,7 +441,7 @@ if uploaded_file is not None:
                     
                     # Total createEvents per week with consistent styling
                     ax.plot(weekly_events_summary['fromDate'], weekly_events_summary['total_createEvents'], 
-                            marker='o', linewidth=2.5, markersize=6, color=COLOR_SECONDARY)
+                            marker='o', linewidth=2.5, markersize=6, color=COLOR_SUCCESS)
                     ax.set_title('Total Create Events per Week', fontsize=12, fontweight='bold')
                     ax.set_ylabel('Total Create Events', fontsize=10)
                     ax.set_xlabel('Week', fontsize=10)
