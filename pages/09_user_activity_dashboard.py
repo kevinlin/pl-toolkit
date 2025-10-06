@@ -4,24 +4,54 @@ import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 
-# Page configuration
+# =============================================================================
+# PAGE CONFIGURATION
+# =============================================================================
 st.set_page_config(page_title="User Activity Dashboard", layout="wide")
 
-st.title("User Activity Dashboard")
-st.header("Weekly User Activity Analysis")
+# =============================================================================
+# STYLING CONSTANTS
+# =============================================================================
+# Color palettes for consistent styling
+COLOR_PRIMARY = '#1f77b4'      # Blue
+COLOR_SECONDARY = '#ff7f0e'    # Orange
+COLOR_SUCCESS = '#2ca02c'      # Green
+COLOR_DANGER = '#d62728'       # Red
+COLOR_INFO = '#9467bd'         # Purple
+COLOR_BACKGROUND = '#f8f9fa'   # Light gray for chart backgrounds
 
-# File upload section
-st.subheader("📁 Upload Your Data")
+# Chart color schemes
+COLORS_QUALITATIVE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', 
+                      '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+COLORS_SEQUENTIAL_BLUE = plt.cm.Blues
+COLORS_SEQUENTIAL_ORANGE = plt.cm.Oranges
+COLORS_DIVERGING = plt.cm.RdYlGn
+
+# =============================================================================
+# HEADER
+# =============================================================================
+st.title("User Activity Dashboard")
+st.markdown("### Weekly User Activity Analysis")
+
+# =============================================================================
+# FILE UPLOAD SECTION
+# =============================================================================
+st.markdown("---")
+st.header("📁 Data Upload")
 uploaded_file = st.file_uploader(
     "Choose a CSV file", 
     type="csv",
     help="Upload a CSV file with weekly user activity data"
 )
 
-# Only proceed if a file is uploaded
+# =============================================================================
+# MAIN DASHBOARD (Only if file is uploaded)
+# =============================================================================
 if uploaded_file is not None:
     try:
-        # Load data from uploaded file
+        # ---------------------------------------------------------------------
+        # Data Loading and Validation
+        # ---------------------------------------------------------------------
         df = pd.read_csv(uploaded_file)
         
         # Validate required columns
@@ -38,14 +68,20 @@ if uploaded_file is not None:
         df['toDate'] = pd.to_datetime(df['toDate'], format='%Y%m%d')
         df['week_period'] = df['fromDate'].dt.strftime('%Y-%m-%d') + ' to ' + df['toDate'].dt.strftime('%Y-%m-%d')
         
-        # Display data preview
-        st.subheader("📋 Data Preview")
+        # ---------------------------------------------------------------------
+        # Data Preview
+        # ---------------------------------------------------------------------
+        st.markdown("---")
+        st.header("📋 Data Preview")
         st.write(f"Loaded {len(df)} weekly records")
         preview_cols = ['fullName', 'country', 'division', 'week_period', 'logins']
         if 'salesRepEmail' in df.columns:
             preview_cols.insert(-1, 'salesRepEmail')
         st.dataframe(df[preview_cols].head(10), use_container_width=True)
         
+        # ---------------------------------------------------------------------
+        # Data Aggregation
+        # ---------------------------------------------------------------------
         # Aggregate user data across all weeks
         agg_dict = {
             'logins': 'sum',
@@ -67,14 +103,17 @@ if uploaded_file is not None:
         # Filter out users with zero logins
         active_users = user_totals[user_totals['total_logins'] > 0].copy()
         active_users = active_users.sort_values(['country', 'total_logins'], ascending=[True, False])
-        
+
         # Filter users with createEvents if column exists
         if 'createEvents' in df.columns:
             active_users_events = user_totals[user_totals['total_createEvents'] > 0].copy()
             active_users_events = active_users_events.sort_values(['country', 'total_createEvents'], ascending=[True, False])
 
-        # Display basic statistics
-        st.subheader("📊 Overview")
+        # =============================================================================
+        # OVERVIEW SECTION
+        # =============================================================================
+        st.markdown("---")
+        st.header("📊 Overview")
 
         date_range = f"{df['fromDate'].min().strftime('%Y-%m-%d')} to {df['toDate'].max().strftime('%Y-%m-%d')}"
         st.metric("Date Range", date_range)
@@ -87,7 +126,10 @@ if uploaded_file is not None:
         with col3:
             st.metric("Countries", df['country'].nunique())
 
-        # Weekly Activity Trends
+        # =============================================================================
+        # WEEKLY TRENDS SECTION
+        # =============================================================================
+        st.markdown("---")
         st.subheader("📈 Weekly Activity Trends")
         weekly_agg_dict = {
             'logins': 'sum',
@@ -104,25 +146,27 @@ if uploaded_file is not None:
             weekly_columns.append('total_createEvents')
         weekly_summary.columns = weekly_columns
         
-        # Create weekly trend chart
+        # Create weekly trend chart with consistent styling
         fig_weekly, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
         
         # Total logins per week
         ax1.plot(weekly_summary['fromDate'], weekly_summary['total_logins'], 
-                marker='o', linewidth=2, color='steelblue')
-        ax1.set_title('Total Logins per Week')
-        ax1.set_ylabel('Total Logins')
-        ax1.grid(True, alpha=0.3)
+                marker='o', linewidth=2.5, markersize=6, color=COLOR_PRIMARY)
+        ax1.set_title('Total Logins per Week', fontsize=12, fontweight='bold')
+        ax1.set_ylabel('Total Logins', fontsize=10)
+        ax1.grid(True, alpha=0.3, linestyle='--')
         ax1.tick_params(axis='x', rotation=45)
+        ax1.set_facecolor(COLOR_BACKGROUND)
         
         # Active users per week
         ax2.plot(weekly_summary['fromDate'], weekly_summary['active_users'], 
-                marker='s', linewidth=2, color='darkgreen')
-        ax2.set_title('Active Users per Week')
-        ax2.set_ylabel('Number of Active Users')
-        ax2.set_xlabel('Week')
-        ax2.grid(True, alpha=0.3)
+                marker='s', linewidth=2.5, markersize=6, color=COLOR_SUCCESS)
+        ax2.set_title('Active Users per Week', fontsize=12, fontweight='bold')
+        ax2.set_ylabel('Number of Active Users', fontsize=10)
+        ax2.set_xlabel('Week', fontsize=10)
+        ax2.grid(True, alpha=0.3, linestyle='--')
         ax2.tick_params(axis='x', rotation=45)
+        ax2.set_facecolor(COLOR_BACKGROUND)
         
         plt.tight_layout()
         st.pyplot(fig_weekly)
@@ -173,10 +217,10 @@ if uploaded_file is not None:
                 active_users_count = mau_by_country.get(country, 0)
                 inactive_users_count = total_users - active_users_count
                 
-                # Create pie chart data
+                # Create pie chart data with consistent colors
                 sizes = [active_users_count, inactive_users_count]
                 labels = ['Active Users', 'Inactive Users']
-                colors = ['#2E8B57', '#DC143C']  # Green for active, red for inactive
+                colors = [COLOR_SUCCESS, COLOR_DANGER]  # Green for active, red for inactive
                 
                 # Create pie chart
                 wedges, texts, autotexts = axes[i].pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', 
@@ -200,7 +244,7 @@ if uploaded_file is not None:
                 with cols[i]:
                     st.metric(f"{country} MAU Rate", f"{(active_users_count/total_users*100):.1f}%")
         else:
-            st.info("No data available for the specified countries (Singapore, Malaysia)")
+            st.info("No data available for the specified countries (Singapore, Malaysia, Vietnam)")
 
         # Summary table by country
         st.subheader("📋 Summary by Country")
@@ -225,8 +269,12 @@ if uploaded_file is not None:
         country_summary.columns = column_names
         st.dataframe(country_summary, use_container_width=True)
 
+        # =============================================================================
+        # LOGIN ANALYSIS SECTION
+        # =============================================================================
         st.markdown("---")
         st.header("🔑 Login Analysis")
+
         # User input for top N users per country
         st.subheader("🎯 Filter Options")
         top_n = st.slider("Select top N users per country", min_value=3, max_value=10, value=5)
@@ -235,7 +283,7 @@ if uploaded_file is not None:
         top_users_by_country = active_users.groupby('country').head(top_n).reset_index(drop=True)
 
         # Display country-wise breakdown
-        st.subheader("🌍 Country Breakdown - Top Users (Total Logins)")
+        st.subheader("🌍 Country Breakdown - Top Users")
         for country in df['country'].unique():
             country_data = active_users[active_users['country'] == country].head(top_n)
             if not country_data.empty:
@@ -252,14 +300,17 @@ if uploaded_file is not None:
         user_labels = [f"{name}\n({country})" for name, country in 
                        zip(top_users_overall['fullName'], top_users_overall['country'])]
 
+        # Use consistent color scheme
         bars2 = ax.bar(range(len(top_users_overall)), top_users_overall['total_logins'], 
-                        color=plt.cm.viridis(np.linspace(0, 1, len(top_users_overall))))
-        ax.set_xlabel('Users')
-        ax.set_ylabel('Total Login Count')
-        ax.set_title(f'Top {len(top_users_overall)} Users Overall')
+                        color=COLORS_SEQUENTIAL_BLUE(np.linspace(0.4, 0.9, len(top_users_overall))),
+                        edgecolor='white', linewidth=0.5)
+        ax.set_xlabel('Users', fontsize=10)
+        ax.set_ylabel('Total Login Count', fontsize=10)
+        ax.set_title(f'Top {len(top_users_overall)} Users Overall', fontsize=12, fontweight='bold')
         ax.set_xticks(range(len(top_users_overall)))
         ax.set_xticklabels(user_labels, rotation=45, ha='right', fontsize=8)
-        ax.grid(axis='y', alpha=0.3)
+        ax.grid(axis='y', alpha=0.3, linestyle='--')
+        ax.set_facecolor(COLOR_BACKGROUND)
 
         # Add value labels on bars
         for i, value in enumerate(top_users_overall['total_logins']):
@@ -273,12 +324,14 @@ if uploaded_file is not None:
         fig_top_countries, ax = plt.subplots(figsize=(15, 6))
 
         country_totals = active_users.groupby('country')['total_logins'].sum().sort_values(ascending=True)
-        colors = plt.cm.Set3(np.linspace(0, 1, len(country_totals)))
+        colors = [COLORS_QUALITATIVE[i % len(COLORS_QUALITATIVE)] for i in range(len(country_totals))]
 
-        bars1 = ax.barh(country_totals.index, country_totals.values, color=colors)
-        ax.set_xlabel('Total Login Count (All Weeks)')
-        ax.set_title('Total Logins by Country')
-        ax.grid(axis='x', alpha=0.3)
+        bars1 = ax.barh(country_totals.index, country_totals.values, color=colors, 
+                       edgecolor='white', linewidth=1)
+        ax.set_xlabel('Total Login Count (All Weeks)', fontsize=10)
+        ax.set_title('Total Logins by Country', fontsize=12, fontweight='bold')
+        ax.grid(axis='x', alpha=0.3, linestyle='--')
+        ax.set_facecolor(COLOR_BACKGROUND)
 
         # Add value labels on bars
         for i, (country, value) in enumerate(country_totals.items()):
@@ -299,7 +352,9 @@ if uploaded_file is not None:
         st.write(f"• **Most Active Week**: {most_active_week['week_period']} with {most_active_week['total_logins']} total logins")
         st.write(f"• **Most Active Country**: {most_active_country} with {active_users[active_users['country'] == most_active_country]['total_logins'].sum()} total logins")
 
-        # Create Events Section - Similar to Logins
+        # =============================================================================
+        # CREATE EVENTS ANALYSIS SECTION
+        # =============================================================================
         if 'createEvents' in df.columns and 'total_createEvents' in user_totals.columns:
             st.markdown("---")
             st.header("📝 Create Events Analysis")
@@ -333,14 +388,17 @@ if uploaded_file is not None:
                 user_labels_events = [f"{name}\n({country})" for name, country in 
                                       zip(top_users_events_overall['fullName'], top_users_events_overall['country'])]
                 
+                # Use consistent color scheme (orange for events)
                 bars_events = ax.bar(range(len(top_users_events_overall)), top_users_events_overall['total_createEvents'], 
-                                     color=plt.cm.plasma(np.linspace(0, 1, len(top_users_events_overall))))
-                ax.set_xlabel('Users')
-                ax.set_ylabel('Total Create Events Count')
-                ax.set_title(f'Top {len(top_users_events_overall)} Users Overall by Create Events')
+                                     color=COLORS_SEQUENTIAL_ORANGE(np.linspace(0.4, 0.9, len(top_users_events_overall))),
+                                     edgecolor='white', linewidth=0.5)
+                ax.set_xlabel('Users', fontsize=10)
+                ax.set_ylabel('Total Create Events Count', fontsize=10)
+                ax.set_title(f'Top {len(top_users_events_overall)} Users Overall by Create Events', fontsize=12, fontweight='bold')
                 ax.set_xticks(range(len(top_users_events_overall)))
                 ax.set_xticklabels(user_labels_events, rotation=45, ha='right', fontsize=8)
-                ax.grid(axis='y', alpha=0.3)
+                ax.grid(axis='y', alpha=0.3, linestyle='--')
+                ax.set_facecolor(COLOR_BACKGROUND)
                 
                 # Add value labels on bars
                 for i, value in enumerate(top_users_events_overall['total_createEvents']):
@@ -354,12 +412,14 @@ if uploaded_file is not None:
                 fig_top_countries_events, ax = plt.subplots(figsize=(15, 6))
                 
                 country_totals_events = active_users_events.groupby('country')['total_createEvents'].sum().sort_values(ascending=True)
-                colors_events = plt.cm.Set2(np.linspace(0, 1, len(country_totals_events)))
+                colors_events = [COLORS_QUALITATIVE[i % len(COLORS_QUALITATIVE)] for i in range(len(country_totals_events))]
                 
-                bars_events_country = ax.barh(country_totals_events.index, country_totals_events.values, color=colors_events)
-                ax.set_xlabel('Total Create Events Count (All Weeks)')
-                ax.set_title('Total Create Events by Country')
-                ax.grid(axis='x', alpha=0.3)
+                bars_events_country = ax.barh(country_totals_events.index, country_totals_events.values, 
+                                             color=colors_events, edgecolor='white', linewidth=1)
+                ax.set_xlabel('Total Create Events Count (All Weeks)', fontsize=10)
+                ax.set_title('Total Create Events by Country', fontsize=12, fontweight='bold')
+                ax.grid(axis='x', alpha=0.3, linestyle='--')
+                ax.set_facecolor(COLOR_BACKGROUND)
                 
                 # Add value labels on bars
                 for i, (country, value) in enumerate(country_totals_events.items()):
@@ -382,14 +442,15 @@ if uploaded_file is not None:
                 if len(weekly_events_summary) > 0:
                     fig_weekly_events, ax = plt.subplots(figsize=(12, 5))
                     
-                    # Total createEvents per week
+                    # Total createEvents per week with consistent styling
                     ax.plot(weekly_events_summary['fromDate'], weekly_events_summary['total_createEvents'], 
-                            marker='o', linewidth=2, color='darkorange')
-                    ax.set_title('Total Create Events per Week')
-                    ax.set_ylabel('Total Create Events')
-                    ax.set_xlabel('Week')
-                    ax.grid(True, alpha=0.3)
+                            marker='o', linewidth=2.5, markersize=6, color=COLOR_SECONDARY)
+                    ax.set_title('Total Create Events per Week', fontsize=12, fontweight='bold')
+                    ax.set_ylabel('Total Create Events', fontsize=10)
+                    ax.set_xlabel('Week', fontsize=10)
+                    ax.grid(True, alpha=0.3, linestyle='--')
                     ax.tick_params(axis='x', rotation=45)
+                    ax.set_facecolor(COLOR_BACKGROUND)
                     
                     plt.tight_layout()
                     st.pyplot(fig_weekly_events)
@@ -406,7 +467,9 @@ if uploaded_file is not None:
             else:
                 st.info("No users have created events in this period.")
 
-        # Activity breakdown analysis (if additional columns are available)
+        # =============================================================================
+        # ACTIVITY BREAKDOWN SECTION
+        # =============================================================================
         st.markdown("---")
         st.header("🔍 Activity Breakdown Analysis")
         
@@ -423,17 +486,21 @@ if uploaded_file is not None:
             # Sort activities by total count in descending order
             sorted_activities = sorted(activity_totals.items(), key=lambda x: x[1], reverse=True)
             
-            # Create activity breakdown chart
+            # Create activity breakdown chart with consistent styling
+            st.subheader("📊 Overall Activity Distribution")
             fig_activity, ax = plt.subplots(figsize=(12, 6))
             activities = [item[0] for item in sorted_activities]
             values = [item[1] for item in sorted_activities]
             
-            bars = ax.bar(activities, values, color=plt.cm.tab20(np.linspace(0, 1, len(activities))))
-            ax.set_title('Total Activity Breakdown (All Weeks)')
-            ax.set_ylabel('Total Count')
-            ax.set_xlabel('Activity Type')
+            # Use consistent color palette
+            colors = [COLORS_QUALITATIVE[i % len(COLORS_QUALITATIVE)] for i in range(len(activities))]
+            bars = ax.bar(activities, values, color=colors, edgecolor='white', linewidth=0.5)
+            ax.set_title('Total Activity Breakdown (All Weeks)', fontsize=12, fontweight='bold')
+            ax.set_ylabel('Total Count', fontsize=10)
+            ax.set_xlabel('Activity Type', fontsize=10)
             plt.xticks(rotation=45, ha='right')
-            ax.grid(axis='y', alpha=0.3)
+            ax.grid(axis='y', alpha=0.3, linestyle='--')
+            ax.set_facecolor(COLOR_BACKGROUND)
             
             # Add value labels
             for bar, value in zip(bars, values):
@@ -443,9 +510,9 @@ if uploaded_file is not None:
             
             plt.tight_layout()
             st.pyplot(fig_activity)
-            
+
             # Create stacked bar chart by country for top activities
-            st.subheader("📊 Activity Breakdown by Country")
+            st.subheader("📊 Activity Breakdown by Country (Stacked)")
             
             # Get top N activities (e.g., top 10 to avoid overcrowding)
             top_n_activities = min(10, len(sorted_activities))
@@ -471,7 +538,7 @@ if uploaded_file is not None:
             # Create DataFrame for plotting
             activity_by_country_df = pd.DataFrame(country_activity_data)
             
-            # Create stacked horizontal bar chart
+            # Create stacked horizontal bar chart with consistent styling
             fig_country_activity, ax = plt.subplots(figsize=(14, max(8, len(countries) * 0.5)))
             
             # Plot stacked bars
@@ -480,14 +547,17 @@ if uploaded_file is not None:
                 stacked=True,
                 ax=ax,
                 colormap='tab20',
-                width=0.7
+                width=0.7,
+                edgecolor='white',
+                linewidth=0.5
             )
             
-            ax.set_xlabel('Total Activity Count')
-            ax.set_ylabel('Country')
-            ax.set_title(f'Top {top_n_activities} Activities by Country (Stacked)')
+            ax.set_xlabel('Total Activity Count', fontsize=10)
+            ax.set_ylabel('Country', fontsize=10)
+            ax.set_title(f'Top {top_n_activities} Activities by Country (Stacked)', fontsize=12, fontweight='bold')
             ax.legend(title='Activity Type', bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
-            ax.grid(axis='x', alpha=0.3)
+            ax.grid(axis='x', alpha=0.3, linestyle='--')
+            ax.set_facecolor(COLOR_BACKGROUND)
             
             plt.tight_layout()
             st.pyplot(fig_country_activity)
@@ -507,21 +577,24 @@ if uploaded_file is not None:
             
             top_5_df = pd.DataFrame(top_5_data)
             
-            # Create grouped bar chart
+            # Create grouped bar chart with consistent styling
             fig_grouped, ax = plt.subplots(figsize=(14, max(6, len(countries) * 0.4)))
             
             top_5_df.plot(
                 kind='barh',
                 ax=ax,
-                colormap='Set2',
-                width=0.7
+                color=[COLORS_QUALITATIVE[i % len(COLORS_QUALITATIVE)] for i in range(len(top_5_activities))],
+                width=0.7,
+                edgecolor='white',
+                linewidth=0.5
             )
             
-            ax.set_xlabel('Total Activity Count')
-            ax.set_ylabel('Country')
-            ax.set_title('Top 5 Activities by Country (Grouped Comparison)')
+            ax.set_xlabel('Total Activity Count', fontsize=10)
+            ax.set_ylabel('Country', fontsize=10)
+            ax.set_title('Top 5 Activities by Country (Grouped Comparison)', fontsize=12, fontweight='bold')
             ax.legend(title='Activity Type', bbox_to_anchor=(1.05, 1), loc='upper left')
-            ax.grid(axis='x', alpha=0.3)
+            ax.grid(axis='x', alpha=0.3, linestyle='--')
+            ax.set_facecolor(COLOR_BACKGROUND)
             
             plt.tight_layout()
             st.pyplot(fig_grouped)
@@ -552,11 +625,14 @@ if uploaded_file is not None:
         st.error(f"Error reading the CSV file: {str(e)}")
         st.info("Please make sure your CSV file is properly formatted and contains the required columns.")
 
+# =============================================================================
+# NO FILE UPLOADED - SHOW INSTRUCTIONS
+# =============================================================================
 else:
-    # Show instructions when no file is uploaded
     st.info("👆 Please upload a CSV file to get started!")
     
-    st.subheader("📝 File Format Requirements")
+    st.markdown("---")
+    st.header("📝 File Format Requirements")
     st.write("Your CSV file should contain weekly user activity data with the following columns:")
     
     sample_data = {
