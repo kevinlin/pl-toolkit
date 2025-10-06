@@ -89,11 +89,20 @@ if uploaded_file is not None:
 
         # Weekly Activity Trends
         st.subheader("📈 Weekly Activity Trends")
-        weekly_summary = df.groupby(['fromDate', 'week_period']).agg({
+        weekly_agg_dict = {
             'logins': 'sum',
             'fullName': 'nunique'
-        }).reset_index()
-        weekly_summary.columns = ['fromDate', 'week_period', 'total_logins', 'active_users']
+        }
+        if 'createEvents' in df.columns:
+            weekly_agg_dict['createEvents'] = 'sum'
+        
+        weekly_summary = df.groupby(['fromDate', 'week_period']).agg(weekly_agg_dict).reset_index()
+        
+        # Rename columns based on what's available
+        weekly_columns = ['fromDate', 'week_period', 'total_logins', 'active_users']
+        if 'createEvents' in df.columns:
+            weekly_columns.append('total_createEvents')
+        weekly_summary.columns = weekly_columns
         
         # Create weekly trend chart
         fig_weekly, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
@@ -236,6 +245,18 @@ if uploaded_file is not None:
         plt.tight_layout()
         st.pyplot(fig_top_countries)
 
+        # Key insights - login
+        st.subheader("💡 Key Insights")
+        most_active_country = active_users.groupby('country')['total_logins'].sum().idxmax()
+        most_active_user = active_users.loc[active_users['total_logins'].idxmax()]
+        most_active_week = weekly_summary.loc[weekly_summary['total_logins'].idxmax()]
+
+        st.write(f"• **Average Logins per Active User**: {active_users['total_logins'].mean():.1f}")
+        st.write(f"• **Most Active User**: {most_active_user['fullName']} from {most_active_user['country']} with {most_active_user['total_logins']} total logins across {most_active_user['weeks_active']} weeks")
+        st.write(f"• **Average Weeks Active per User**: {user_totals['weeks_active'].mean():.1f}")
+        st.write(f"• **Most Active Week**: {most_active_week['week_period']} with {most_active_week['total_logins']} total logins")
+        st.write(f"• **Most Active Country**: {most_active_country} with {active_users[active_users['country'] == most_active_country]['total_logins'].sum()} total logins")
+
         # Create Events Section - Similar to Logins
         if 'createEvents' in df.columns and 'total_createEvents' in user_totals.columns:
             st.markdown("---")
@@ -332,14 +353,14 @@ if uploaded_file is not None:
                     st.pyplot(fig_weekly_events)
                 
                 # Add key insights for createEvents
-                st.subheader("💡 Key Insights - Create Events")
+                st.subheader("💡 Key Insights")
                 most_active_country_events = active_users_events.groupby('country')['total_createEvents'].sum().idxmax()
                 most_active_user_events = active_users_events.loc[active_users_events['total_createEvents'].idxmax()]
                 
-                st.write(f"• **Most Active Country (Events)**: {most_active_country_events} with {int(active_users_events[active_users_events['country'] == most_active_country_events]['total_createEvents'].sum())} total events created")
-                st.write(f"• **Most Active User (Events)**: {most_active_user_events['fullName']} from {most_active_user_events['country']} with {int(most_active_user_events['total_createEvents'])} total events")
-                st.write(f"• **Average Events per Active User**: {active_users_events['total_createEvents'].mean():.1f}")
                 st.write(f"• **Users Creating Events**: {len(active_users_events)} out of {len(user_totals)} users ({len(active_users_events)/len(user_totals)*100:.1f}%)")
+                st.write(f"• **Average Events per Active User**: {active_users_events['total_createEvents'].mean():.1f}")
+                st.write(f"• **Most Active User**: {most_active_user_events['fullName']} from {most_active_user_events['country']} with {int(most_active_user_events['total_createEvents'])} total events")
+                st.write(f"• **Most Active Country**: {most_active_country_events} with {int(active_users_events[active_users_events['country'] == most_active_country_events]['total_createEvents'].sum())} total events created")
             else:
                 st.info("No users have created events in this period.")
 
@@ -394,20 +415,22 @@ if uploaded_file is not None:
 
         # Weekly summary table
         st.subheader("📅 Weekly Summary")
-        st.dataframe(weekly_summary[['week_period', 'total_logins', 'active_users']], use_container_width=True, hide_index=True)
-
-        # Additional insights
-        st.subheader("💡 Key Insights")
-        most_active_country = active_users.groupby('country')['total_logins'].sum().idxmax()
-        most_active_user = active_users.loc[active_users['total_logins'].idxmax()]
-        most_active_week = weekly_summary.loc[weekly_summary['total_logins'].idxmax()]
-
-        st.write(f"• **Most Active Country**: {most_active_country} with {active_users[active_users['country'] == most_active_country]['total_logins'].sum()} total logins")
-        st.write(f"• **Most Active User**: {most_active_user['fullName']} from {most_active_user['country']} with {most_active_user['total_logins']} total logins across {most_active_user['weeks_active']} weeks")
-        st.write(f"• **Most Active Week**: {most_active_week['week_period']} with {most_active_week['total_logins']} total logins")
-        st.write(f"• **Average Logins per Active User**: {active_users['total_logins'].mean():.1f}")
-        st.write(f"• **Total Active Users**: {len(active_users)} out of {len(user_totals)} users ({len(active_users)/len(user_totals)*100:.1f}%)")
-        st.write(f"• **Average Weeks Active per User**: {user_totals['weeks_active'].mean():.1f}")
+        display_columns = ['week_period', 'total_logins', 'active_users']
+        if 'total_createEvents' in weekly_summary.columns:
+            display_columns.append('total_createEvents')
+        
+        weekly_display = weekly_summary[display_columns].copy()
+        # Rename columns for better display
+        column_rename = {
+            'week_period': 'Week Period',
+            'total_logins': 'Total Logins',
+            'active_users': 'Active Users'
+        }
+        if 'total_createEvents' in weekly_summary.columns:
+            column_rename['total_createEvents'] = 'Total Events Created'
+        
+        weekly_display.columns = [column_rename.get(col, col) for col in weekly_display.columns]
+        st.dataframe(weekly_display, use_container_width=True, hide_index=True)
 
     except Exception as e:
         st.error(f"Error reading the CSV file: {str(e)}")
