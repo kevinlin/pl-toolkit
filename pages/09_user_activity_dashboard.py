@@ -100,6 +100,13 @@ if uploaded_file is not None:
         # Filter users with createEvents
         active_users_events = user_totals[user_totals['total_createEvents'] > 0].copy()
         active_users_events = active_users_events.sort_values(['country', 'total_createEvents'], ascending=[True, False])
+        
+        # Total user counts per country (hardcoded as specified)
+        total_users_by_country = {
+            'Singapore': 32,
+            'Malaysia': 35,
+            'Vietnam': 27
+        }
 
         # =============================================================================
         # OVERVIEW SECTION
@@ -128,27 +135,43 @@ if uploaded_file is not None:
         weekly_summary = df.groupby(['fromDate', 'week_period']).agg(weekly_agg_dict).reset_index()
         weekly_summary.columns = ['fromDate', 'week_period', 'total_logins', 'active_users', 'total_createEvents']
         
-        # Create weekly trend chart with consistent styling
+        # Aggregate by country and week for split charts
+        weekly_by_country = df.groupby(['country', 'fromDate', 'week_period']).agg(weekly_agg_dict).reset_index()
+        weekly_by_country.columns = ['country', 'fromDate', 'week_period', 'total_logins', 'active_users', 'total_createEvents']
+        
+        countries_for_chart = total_users_by_country.keys()
+        
+        # Create weekly trend chart with consistent styling - split by country
         fig_weekly, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
         
-        # Total logins per week
-        ax1.plot(weekly_summary['fromDate'], weekly_summary['total_logins'], 
-                marker='o', linewidth=2.5, markersize=6, color=COLOR_PRIMARY)
-        ax1.set_title('Total Logins per Week', fontsize=12, fontweight='bold')
+        # Total logins per week - by country
+        for i, country in enumerate(countries_for_chart):
+            country_data = weekly_by_country[weekly_by_country['country'] == country]
+            color = COLORS_QUALITATIVE[i % len(COLORS_QUALITATIVE)]
+            ax1.plot(country_data['fromDate'], country_data['total_logins'], 
+                    marker='o', linewidth=2.5, markersize=6, color=color, label=country)
+        
+        ax1.set_title('Total Logins per Week by Country', fontsize=12, fontweight='bold')
         ax1.set_ylabel('Total Logins', fontsize=10)
         ax1.grid(True, alpha=0.3, linestyle='--')
         ax1.tick_params(axis='x', rotation=45)
         ax1.set_facecolor(COLOR_BACKGROUND)
+        ax1.legend(loc='best', fontsize=9)
         
-        # Active users per week
-        ax2.plot(weekly_summary['fromDate'], weekly_summary['active_users'], 
-                marker='s', linewidth=2.5, markersize=6, color=COLOR_SUCCESS)
-        ax2.set_title('Active Users per Week', fontsize=12, fontweight='bold')
+        # Active users per week - by country
+        for i, country in enumerate(countries_for_chart):
+            country_data = weekly_by_country[weekly_by_country['country'] == country]
+            color = COLORS_QUALITATIVE[i % len(COLORS_QUALITATIVE)]
+            ax2.plot(country_data['fromDate'], country_data['active_users'], 
+                    marker='s', linewidth=2.5, markersize=6, color=color, label=country)
+        
+        ax2.set_title('Active Users per Week by Country', fontsize=12, fontweight='bold')
         ax2.set_ylabel('Number of Active Users', fontsize=10)
         ax2.set_xlabel('Week', fontsize=10)
         ax2.grid(True, alpha=0.3, linestyle='--')
         ax2.tick_params(axis='x', rotation=45)
         ax2.set_facecolor(COLOR_BACKGROUND)
+        ax2.legend(loc='best', fontsize=9)
         
         plt.tight_layout()
         st.pyplot(fig_weekly)
@@ -170,13 +193,6 @@ if uploaded_file is not None:
 
         # Monthly Active Users section
         st.subheader("📊 Monthly Active Users")
-        
-        # Total user counts per country (hardcoded as specified)
-        total_users_by_country = {
-            'Singapore': 32,
-            'Malaysia': 35,
-            'Vietnam': 27
-        }
         
         # Calculate MAU (users with total_logins > 0) per country
         mau_by_country = active_users['country'].value_counts().to_dict()
