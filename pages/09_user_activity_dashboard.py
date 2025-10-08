@@ -91,10 +91,7 @@ if uploaded_file is not None:
         }
         
         user_totals = df.groupby(['fullName', 'country', 'division']).agg(agg_dict).reset_index()
-        
-        # Rename columns based on what's available
-        new_columns = ['fullName', 'country', 'division', 'total_logins', 'weeks_active', 'total_createEvents']
-        user_totals.columns = new_columns
+        user_totals.columns = ['fullName', 'country', 'division', 'total_logins', 'weeks_active', 'total_createEvents']
         
         # Filter out users with zero logins
         active_users = user_totals[user_totals['total_logins'] > 0].copy()
@@ -129,10 +126,7 @@ if uploaded_file is not None:
         }
         
         weekly_summary = df.groupby(['fromDate', 'week_period']).agg(weekly_agg_dict).reset_index()
-        
-        # Rename columns based on what's available
-        weekly_columns = ['fromDate', 'week_period', 'total_logins', 'active_users', 'total_createEvents']
-        weekly_summary.columns = weekly_columns
+        weekly_summary.columns = ['fromDate', 'week_period', 'total_logins', 'active_users', 'total_createEvents']
         
         # Create weekly trend chart with consistent styling
         fig_weekly, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8))
@@ -171,7 +165,6 @@ if uploaded_file is not None:
             'active_users': 'Active Users',
             'total_createEvents': 'Total Events Created'
         }
-        
         weekly_display.columns = [column_rename.get(col, col) for col in weekly_display.columns]
         st.dataframe(weekly_display, use_container_width=True, hide_index=True)
 
