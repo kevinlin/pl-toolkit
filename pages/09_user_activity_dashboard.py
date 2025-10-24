@@ -105,7 +105,8 @@ if uploaded_file is not None:
         total_users_by_country = {
             'Singapore': 32,
             'Malaysia': 35,
-            'Vietnam': 27
+            'Vietnam': 27,
+            'Philippines': 18
         }
 
         # =============================================================================
@@ -238,7 +239,7 @@ if uploaded_file is not None:
                 with cols[i]:
                     st.metric(f"{country} MAU Rate", f"{(active_users_count/total_users*100):.1f}%")
         else:
-            st.info("No data available for the specified countries (Singapore, Malaysia, Vietnam)")
+            st.info("No data available for the specified countries (Singapore, Malaysia, Vietnam, Philippines)")
 
         # Summary table by country
         st.subheader("📋 Summary by Country")
