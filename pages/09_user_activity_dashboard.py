@@ -271,21 +271,28 @@ if uploaded_file is not None:
         # Get top N users per country (by total logins)
         top_users_by_country = active_users.groupby('country').head(top_n).reset_index(drop=True)
 
-        # Display country-wise breakdown
+        # Display country-wise breakdown with tabs
         st.subheader("🌍 Country Breakdown - Top Users")
-        for country in df['country'].unique():
-            country_data = active_users[active_users['country'] == country].head(top_n)
-            if not country_data.empty:
-                st.write(f"**{country}** - Top {min(top_n, len(country_data))} Users:")
-                display_df = country_data[['fullName', 'division', 'total_logins', 'weeks_active']].copy()
-                display_df.columns = ['Full Name', 'Division', 'Total Logins', 'Weeks Active']
-                st.dataframe(display_df, use_container_width=True, hide_index=True)
+        countries = sorted(df['country'].unique())
+        tabs = st.tabs(countries)
+
+        for i, country in enumerate(countries):
+            with tabs[i]:
+                country_data = active_users[active_users['country'] == country].head(top_n)
+                if not country_data.empty:
+                    st.write(f"**Top {min(top_n, len(country_data))} Users in {country}:**")
+                    display_df = country_data[['fullName', 'division', 'total_logins', 'weeks_active']].copy()
+                    display_df.columns = ['Full Name', 'Division', 'Total Logins', 'Weeks Active']
+                    st.dataframe(display_df, use_container_width=True, hide_index=True)
+                else:
+                    st.info(f"No active users in {country}")
+        st.markdown("---")
 
         # Matplotlib bar chart for top users by logins
         st.subheader("📊 Top Users by Logins")
         fig_top_users, ax = plt.subplots(figsize=(12, 6))
 
-        top_users_overall = active_users.sort_values('total_logins', ascending=False).head(top_n * 3)
+        top_users_overall = active_users.sort_values('total_logins', ascending=False).head(top_n * 4)
         user_labels = [f"{name}\n({country})" for name, country in 
                        zip(top_users_overall['fullName'], top_users_overall['country'])]
 
@@ -358,16 +365,23 @@ if uploaded_file is not None:
             st.metric("Avg Events per Active User", f"{avg_events:.1f}")
         
         if len(active_users_events) > 0:
-            # Country-wise breakdown for createEvents - all users
+            # Country-wise breakdown for createEvents - all users with tabs
             st.subheader("🌍 Country Breakdown -  Users with Create Events")
-            for country in df['country'].unique():
-                country_data = active_users_events[active_users_events['country'] == country]
-                if not country_data.empty:
-                    st.write(f"**{country}** - {len(country_data)} users")
-                    display_df = country_data[['fullName', 'division', 'total_createEvents', 'weeks_active']].copy()
-                    display_df.columns = ['Full Name', 'Division', 'Total Create Events', 'Weeks Active']
-                    st.dataframe(display_df, use_container_width=True, hide_index=True)
-            
+            countries = sorted(df['country'].unique())
+            tabs = st.tabs(countries)
+
+            for i, country in enumerate(countries):
+                with tabs[i]:
+                    country_data = active_users_events[active_users_events['country'] == country]
+                    if not country_data.empty:
+                        st.write(f"**{len(country_data)} Users** with Create Events in {country}:")
+                        display_df = country_data[['fullName', 'division', 'total_createEvents', 'weeks_active']].copy()
+                        display_df.columns = ['Full Name', 'Division', 'Total Create Events', 'Weeks Active']
+                        st.dataframe(display_df, use_container_width=True, hide_index=True)
+                    else:
+                        st.info(f"No users with create events in {country}")
+            st.markdown("---")
+
             # Matplotlib bar chart for top users by createEvents
             st.subheader("📊 Top Users by Create Events")
             fig_top_users_events, ax = plt.subplots(figsize=(12, 6))
