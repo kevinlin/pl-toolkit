@@ -104,8 +104,8 @@ if uploaded_file is not None:
         # Total user counts per country (hardcoded as specified)
         total_users_by_country = {
             'Singapore': 32,
-            'Malaysia': 35,
-            'Vietnam': 27,
+            'Malaysia': 34,
+            'Vietnam': 22,
             'Philippines': 18
         }
 
