@@ -358,12 +358,12 @@ if uploaded_file is not None:
             st.metric("Avg Events per Active User", f"{avg_events:.1f}")
         
         if len(active_users_events) > 0:
-            # Country-wise breakdown for createEvents
-            st.subheader("🌍 Country Breakdown - Top Users (Total Create Events)")
+            # Country-wise breakdown for createEvents - all users
+            st.subheader("🌍 Country Breakdown -  Users with Create Events")
             for country in df['country'].unique():
-                country_data = active_users_events[active_users_events['country'] == country].head(top_n)
+                country_data = active_users_events[active_users_events['country'] == country]
                 if not country_data.empty:
-                    st.write(f"**{country}** - Top {min(top_n, len(country_data))} Users:")
+                    st.write(f"**{country}** - {len(country_data)} users")
                     display_df = country_data[['fullName', 'division', 'total_createEvents', 'weeks_active']].copy()
                     display_df.columns = ['Full Name', 'Division', 'Total Create Events', 'Weeks Active']
                     st.dataframe(display_df, use_container_width=True, hide_index=True)
