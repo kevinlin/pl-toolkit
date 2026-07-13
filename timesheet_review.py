@@ -64,6 +64,62 @@ def extract_date_col_mappings(df):
     return valid_days
 
 
+def extract_weekend_col_mappings(df):
+    """Extract weekend day columns from the timesheet."""
+    columns = df.iloc[2, 15:].dropna().astype(str).tolist()
+    weekend_days = {}
+
+    today = datetime.now()
+    previous_month = False
+    if today.day <= 5:
+        previous_month = True
+        last_day = today.replace(day=1) - timedelta(days=1)
+        today = last_day
+
+    for idx, col in enumerate(columns):
+        try:
+            day_str, weekday = col.split(", ")
+            day = int(day_str)
+            date = today.replace(day=day)
+            if weekday in ["Sa", "Su"]:
+                if (previous_month and day <= last_day.day) or (
+                    not previous_month and day < today.day
+                ):
+                    weekend_days[date.strftime("%a, %b-%d")] = idx + 15
+        except ValueError:
+            continue
+
+    return weekend_days
+
+
+def read_weekend_timesheet_entries(df, user_row_mappings, weekend_col_mappings):
+    """Read weekend timesheet entries, returning only days where any user has non-zero bookings."""
+    if not weekend_col_mappings:
+        return pd.DataFrame()
+
+    weekend_data = pd.DataFrame(
+        index=user_row_mappings.keys(), columns=weekend_col_mappings.keys()
+    )
+
+    for user, row_idx in user_row_mappings.items():
+        for day_str, col_idx in weekend_col_mappings.items():
+            target_hours = df.iloc[row_idx + 2, col_idx]
+            target_hours = int(target_hours) if pd.notna(target_hours) else 0
+            actual_hours = df.iloc[row_idx + 3, col_idx]
+            actual_hours = int(actual_hours) if pd.notna(actual_hours) else 0
+            weekend_data.at[user, day_str] = target_hours - actual_hours
+
+    weekend_data = weekend_data.apply(pd.to_numeric, errors="coerce").fillna(0)
+    non_zero_cols = [
+        col for col in weekend_data.columns if (weekend_data[col] != 0).any()
+    ]
+
+    if not non_zero_cols:
+        return pd.DataFrame()
+
+    return weekend_data[non_zero_cols]
+
+
 def read_timesheet_entries_by_users(df, user_row_mappings, date_col_mappings):
     """Read timesheet entries for each user by valid workdays."""
     timesheet_data = pd.DataFrame(index=user_row_mappings.keys(), columns=date_col_mappings.keys())
@@ -116,6 +172,23 @@ def main():
     date_col_mappings = extract_date_col_mappings(df)
     # print(f"Days to check: {date_col_mappings}")
     timesheet_entries = read_timesheet_entries_by_users(df, user_row_mappings, date_col_mappings)
+
+    weekend_col_mappings = extract_weekend_col_mappings(df)
+    weekend_entries = read_weekend_timesheet_entries(
+        df, user_row_mappings, weekend_col_mappings
+    )
+    if not weekend_entries.empty:
+        submitted = timesheet_entries["Submitted?"]
+        date_only = timesheet_entries.drop(columns=["Submitted?"])
+        merged = pd.concat([date_only, weekend_entries], axis=1)
+        all_col_mappings = {**date_col_mappings, **weekend_col_mappings}
+        ordered_cols = sorted(
+            [c for c in merged.columns if c in all_col_mappings],
+            key=lambda c: all_col_mappings[c],
+        )
+        timesheet_entries = merged[ordered_cols]
+        timesheet_entries["Submitted?"] = submitted
+
     print(timesheet_entries)
     # Load workbook with data_only=True to get cell values (not formulas)
     worksheet = load_workbook(filename=file_path, data_only=True)["Sheet2"]  # Replace with your sheet name
