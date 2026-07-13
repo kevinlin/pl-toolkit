@@ -27,4 +27,4 @@ def csv_to_articles(input_file, output_directory):
 
 
 if __name__ == "__main__":
-    csv_to_articles('input/mirko-feedback-2024.csv', 'output/mirko-feedback-2024/')
+    csv_to_articles('input/mirko-feedback-2025.csv', 'output/mirko-feedback-2025')
