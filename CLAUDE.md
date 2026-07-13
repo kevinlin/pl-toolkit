@@ -14,44 +14,43 @@ This is the PL Toolkit - a comprehensive Streamlit web application and Python to
 
 ### Environment Setup
 ```bash
-# Create and activate virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Install in development mode with all dependencies
-pip install -e .[dev]
+# Sync all dependencies (creates .venv automatically)
+uv sync --all-extras
 ```
 
 ### Running the Application
 ```bash
 # Start the Streamlit web application
-streamlit run homepage.py
+uv run streamlit run homepage.py
 
-# Command line tools (after installation)
-timesheet-review input/filename.xlsx
-pdf-parser
-csv-converter
+# Command line tools
+uv run timesheet-review input/filename.xlsx
+uv run pdf-parser
+uv run csv-converter
 ```
 
 ### Code Quality and Testing
 ```bash
 # Code formatting
-black .
+uv run black .
 
 # Import sorting
-isort .
+uv run isort .
 
 # Type checking
-mypy .
+uv run mypy .
 
 # Linting
-flake8 .
+uv run flake8 .
 
 # Testing with coverage
-pytest
+uv run pytest
 
 # Run all pre-commit checks
-pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 ## Architecture
